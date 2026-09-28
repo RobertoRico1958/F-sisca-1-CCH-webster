@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escuela Webster - Física Bachillerato</title>
+<style>
+    body { font-family: Arial, sans-serif; margin:0; background:#f4f4f4; color:#222; }
+    .contenedor { max-width: 980px; margin:0 auto; padding:20px; }
+    .tarjeta { background:#fff; border-radius:14px; padding:22px; box-shadow:0 2px 10px rgba(0,0,0,.12); margin-bottom:20px; }
+    h1,h2,h3 { text-align:center; margin:6px 0; }
+    h1 { font-size:28px; } h2 { font-size:22px; } h3 { font-size:19px; margin-top:12px; }
+    .menu { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:20px 0; }
+    button { padding:15px 10px; font-size:16px; font-weight:bold; border:none; border-radius:10px; cursor:pointer; background:#e7e7e7; }
+    button:active { transform:scale(.98); }
+    .modulo { display:none; }
+    .activo { display:block; }
+    .fila2 { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px; }
+    .fila3 { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; margin-bottom:15px; }
+    label { font-weight:bold; font-size:16px; }
+    input, select { width:100%; box-sizing:border-box; padding:12px; font-size:18px; border:1px solid #999; border-radius:9px; margin-top:6px; text-align:center; }
+    .resultado { padding:16px; background:#f7f7f7; border:1px solid #bbb; border-radius:10px; font-size:18px; font-weight:bold; text-align:center; min-height:30px; line-height:1.5; }
+    .procedimiento { white-space:pre-wrap; background:#fafafa; border:1px solid #bbb; border-radius:10px; padding:16px; min-height:240px; font-family:Consolas, monospace; font-size:15px; line-height:1.45; margin-top:10px; overflow-wrap:anywhere; }
+    .acciones { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px; }
+    .error { background:#fff0f0; border:1px solid #c55; color:#900; padding:12px; border-radius:10px; display:none; margin-bottom:12px; font-weight:bold; }
+    canvas { border:1px solid #bbb; border-radius:10px; background:white; max-width:100%; height:auto; }
+    .grafica { text-align:center; margin-top:12px; overflow-x:auto; }
+    .nota { text-align:center; font-size:14px; margin-top:8px; }
+    @media(max-width:700px){
+        .menu,.fila2,.fila3,.acciones{ grid-template-columns:1fr; }
+        h1{font-size:24px;} h2{font-size:20px;}
+    }
+</style>
+</head>
+<body>
+<div class="contenedor">
+    <div class="tarjeta">
+        <h1>Escuela Webster</h1>
+        <h2>Proyecto de Física - Bachillerato</h2>
+        <h3>Vectores y Movimiento Rectilíneo Uniformemente Acelerado</h3>
+
+        <div class="menu">
+            <button onclick="mostrarModulo('vectores')">VECTORES</button>
+            <button onclick="mostrarModulo('mrua')">MRUA</button>
+        </div>
+    </div>
+
+    <div id="vectores" class="tarjeta modulo activo">
+        <h3>Suma y diferencia de vectores - Método analítico</h3>
+        <div id="errorV" class="error"></div>
+
+        <div class="fila2">
+            <div>
+                <label>Magnitud del vector A</label>
+                <input id="magA" inputmode="decimal" placeholder="Ejemplo: 10">
+            </div>
+            <div>
+                <label>Ángulo de A (°)</label>
+                <input id="angA" inputmode="decimal" placeholder="Ejemplo: 30">
+            </div>
+        </div>
+
+        <div class="fila2">
+            <div>
+                <label>Magnitud del vector B</label>
+                <input id="magB" inputmode="decimal" placeholder="Ejemplo: 8">
+            </div>
+            <div>
+                <label>Ángulo de B (°)</label>
+                <input id="angB" inputmode="decimal" placeholder="Ejemplo: 120">
+            </div>
+        </div>
+
+        <div class="fila2">
+            <button onclick="resolverVectores('suma')">SUMA A + B</button>
+            <button onclick="resolverVectores('resta')">DIFERENCIA A - B</button>
+        </div>
+
+        <div id="resultadoV" class="resultado">Aquí aparecerá la resultante.</div>
+
+        <h3>Procedimiento paso a paso</h3>
+        <div id="procV" class="procedimiento"></div>
+
+        <h3>Diagrama vectorial</h3>
+        <div class="grafica"><canvas id="canvasV" width="760" height="460"></canvas></div>
+
+        <div class="acciones">
+            <button onclick="ejemploVectores()">CARGAR EJEMPLO</button>
+            <button onclick="limpiarVectores()">LIMPIAR</button>
+            <button onclick="mostrarModulo('mrua')">IR A MRUA</button>
+        </div>
+    </div>
+
+    <div id="mrua" class="tarjeta modulo">
+        <h3>Movimiento Rectilíneo Uniformemente Acelerado</h3>
+        <div id="errorM" class="error"></div>
+
+        <div class="fila2">
+            <div>
+                <label>¿Qué variable deseas calcular?</label>
+                <select id="objetivoMRUA" onchange="actualizarObjetivoMRUA()">
+                    <option value="vf">Velocidad final vf</option>
+                    <option value="v0">Velocidad inicial v₀</option>
+                    <option value="a">Aceleración a</option>
+                    <option value="t">Tiempo t</option>
+                    <option value="xf">Posición final x</option>
+                    <option value="x0">Posición inicial x₀</option>
+                </select>
+            </div>
+            <div>
+                <label>Indicaciones</label>
+                <div style="padding:12px; margin-top:6px; border:1px solid #bbb; border-radius:9px;">
+                    Captura solamente los datos que conoces. Deja vacíos los que no conozcas.
+                </div>
+            </div>
+        </div>
+
+        <div class="fila3">
+            <div id="campo_v0">
+                <label>Velocidad inicial v₀ (m/s)</label>
+                <input id="v0" inputmode="decimal" placeholder="Dato conocido">
+            </div>
+            <div id="campo_vf">
+                <label>Velocidad final vf (m/s)</label>
+                <input id="vf" inputmode="decimal" placeholder="Dato conocido">
+            </div>
+            <div id="campo_a">
+                <label>Aceleración a (m/s²)</label>
+                <input id="acc" inputmode="decimal" placeholder="Dato conocido">
+            </div>
+        </div>
+
+        <div class="fila3">
+            <div id="campo_t">
+                <label>Tiempo t (s)</label>
+                <input id="tiempo" inputmode="decimal" placeholder="Dato conocido">
+            </div>
+            <div id="campo_x0">
+                <label>Posición inicial x₀ (m)</label>
+                <input id="x0" inputmode="decimal" placeholder="Dato conocido">
+            </div>
+            <div id="campo_xf">
+                <label>Posición final x (m)</label>
+                <input id="xf" inputmode="decimal" placeholder="Dato conocido">
+            </div>
+        </div>
+
+        <button onclick="resolverMRUA()">CALCULAR VARIABLE</button>
+
+        <div id="resultadoM" class="resultado" style="margin-top:16px;">Aquí aparecerá el resultado.</div>
+
+        <h3>Procedimiento paso a paso</h3>
+        <div id="procM" class="procedimiento"></div>
+
+        <h3>Gráfica posición-tiempo</h3>
+        <div class="grafica"><canvas id="canvasM" width="760" height="460"></canvas></div>
+        <div class="nota">La gráfica se genera cuando los datos permiten conocer x₀, v₀, a y t.</div>
+
+        <div class="acciones">
+            <button onclick="ejemploMRUA()">CARGAR EJEMPLO</button>
+            <button onclick="limpiarMRUA()">LIMPIAR</button>
+            <button onclick="mostrarModulo('vectores')">IR A VECTORES</button>
+        </div>
+    </div></div>
+</div>
+
+<script>
+function mostrarModulo(id){
+    document.getElementById('vectores').classList.remove('activo');
+    document.getElementById('mrua').classList.remove('activo');
+    document.getElementById(id).classList.add('activo');
+    window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function num(id){
+    const t = document.getElementById(id).value.trim().replace(",", ".");
+    const n = Number(t);
+    if(!Number.isFinite(n)) throw new Error("Revisa los datos capturados.");
+    return n;
+}
+function fmt(x){
+    if(Math.abs(x)<1e-12) x=0;
+    return Number(x.toFixed(4)).toString();
+}
+function rad(g){ return g*Math.PI/180; }
+function deg(r){ return r*180/Math.PI; }
+
+function mostrarError(id,msg){
+    const e=document.getElementById(id); e.textContent=msg; e.style.display='block';
+}
+function ocultarError(id){ document.getElementById(id).style.display='none'; }
+
+function resolverVectores(op){
+    ocultarError('errorV');
+    try{
+        const A=num('magA'), aA=num('angA'), B=num('magB'), aB=num('angB');
+        if(A<0 || B<0) throw new Error("Las magnitudes deben ser no negativas.");
+
+        const Ax=A*Math.cos(rad(aA)), Ay=A*Math.sin(rad(aA));
+        const Bx=B*Math.cos(rad(aB)), By=B*Math.sin(rad(aB));
+
+        let Rx, Ry, signo, nombre;
+        if(op==='suma'){
+            Rx=Ax+Bx; Ry=Ay+By; signo='+'; nombre='A + B';
+        } else {
+            Rx=Ax-Bx; Ry=Ay-By; signo='-'; nombre='A - B';
+        }
+
+        const R=Math.sqrt(Rx*Rx+Ry*Ry);
+        let ang=deg(Math.atan2(Ry,Rx));
+        if(ang<0) ang+=360;
+
+        document.getElementById('resultadoV').innerHTML =
+            `Resultante ${nombre}: R = ${fmt(R)} unidades<br>`+
+            `Componentes: Rx = ${fmt(Rx)}, Ry = ${fmt(Ry)}<br>`+
+            `Dirección: θ = ${fmt(ang)}°`;
+
+        document.getElementById('procV').textContent =
+`1) Descomponemos cada vector en componentes:
+
+   Ax = A cos(θA)
+      = ${fmt(A)} cos(${fmt(aA)}°)
+      = ${fmt(Ax)}
+
+   Ay = A sen(θA)
+      = ${fmt(A)} sen(${fmt(aA)}°)
+      = ${fmt(Ay)}
+
+   Bx = B cos(θB)
+      = ${fmt(B)} cos(${fmt(aB)}°)
+      = ${fmt(Bx)}
+
+   By = B sen(θB)
+      = ${fmt(B)} sen(${fmt(aB)}°)
+      = ${fmt(By)}
+
+2) Operamos las componentes:
+
+   Rx = Ax ${signo} Bx
+      = ${fmt(Ax)} ${signo} ${fmt(Bx)}
+      = ${fmt(Rx)}
+
+   Ry = Ay ${signo} By
+      = ${fmt(Ay)} ${signo} ${fmt(By)}
+      = ${fmt(Ry)}
+
+3) Calculamos la magnitud de la resultante:
+
+   R = √(Rx² + Ry²)
+     = √((${fmt(Rx)})² + (${fmt(Ry)})²)
+     = ${fmt(R)}
+
+4) Calculamos la dirección:
+
+   θ = atan2(Ry, Rx)
+     = ${fmt(ang)}°
+
+Resultado:
+   R = ${fmt(R)} unidades
+   θ = ${fmt(ang)}°`;
+
+        dibujarVectores(A,aA,B,aB,Rx,Ry,op);
+    }catch(e){ mostrarError('errorV', e.message); }
+}
+
+function dibujarVectores(A,aA,B,aB,Rx,Ry,op){
+    const c=document.getElementById('canvasV'), ctx=c.getContext('2d');
+    const W=c.width,H=c.height,cx=W/2,cy=H/2;
+    ctx.clearRect(0,0,W,H);
+
+    const maxMag=Math.max(A,B,Math.sqrt(Rx*Rx+Ry*Ry),1);
+    const escala=Math.min(W,H)*0.35/maxMag;
+
+    ctx.strokeStyle='#bbb'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+
+    function flecha(x1,y1,x2,y2,label){
+        ctx.strokeStyle='#111'; ctx.fillStyle='#111'; ctx.lineWidth=2.2;
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        const ang=Math.atan2(y2-y1,x2-x1), tam=10;
+        ctx.beginPath();
+        ctx.moveTo(x2,y2);
+        ctx.lineTo(x2-tam*Math.cos(ang-Math.PI/6), y2-tam*Math.sin(ang-Math.PI/6));
+        ctx.lineTo(x2-tam*Math.cos(ang+Math.PI/6), y2-tam*Math.sin(ang+Math.PI/6));
+        ctx.closePath(); ctx.fill();
+        ctx.font='12px Arial'; ctx.fillText(label,x2+6,y2-6);
+    }
+
+    const Ax=A*Math.cos(rad(aA))*escala, Ay=-A*Math.sin(rad(aA))*escala;
+    const Bx=B*Math.cos(rad(aB))*escala, By=-B*Math.sin(rad(aB))*escala;
+
+    flecha(cx,cy,cx+Ax,cy+Ay,'A');
+    flecha(cx,cy,cx+Bx,cy+By,'B');
+    flecha(cx,cy,cx+Rx*escala,cy-Ry*escala,'R');
+
+    ctx.font='12px Arial';
+    ctx.fillText('x',W-18,cy-6);
+    ctx.fillText('y',cx+7,16);
+}
+
+function ejemploVectores(){
+    document.getElementById('magA').value='10';
+    document.getElementById('angA').value='30';
+    document.getElementById('magB').value='8';
+    document.getElementById('angB').value='120';
+    document.getElementById('resultadoV').textContent='Ejemplo cargado. Elige suma o diferencia.';
+    document.getElementById('procV').textContent='';
+    ocultarError('errorV');
+}
+function limpiarVectores(){
+    ['magA','angA','magB','angB'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('resultadoV').textContent='Aquí aparecerá la resultante.';
+    document.getElementById('procV').textContent='';
+    document.getElementById('canvasV').getContext('2d').clearRect(0,0,760,460);
+    ocultarError('errorV');
+}
+
+function valorOpcional(id){
+    const t=document.getElementById(id).value.trim().replace(",",".");
+    if(t==="") return null;
+    const n=Number(t);
+    if(!Number.isFinite(n)) throw new Error("Revisa los datos capturados.");
+    return n;
+}
+
+function actualizarObjetivoMRUA(){
+    const obj=document.getElementById('objetivoMRUA').value;
+    const mapa={v0:'campo_v0',vf:'campo_vf',a:'campo_a',t:'campo_t',x0:'campo_x0',xf:'campo_xf'};
+    for(const [clave,id] of Object.entries(mapa)){
+        const campo=document.getElementById(id);
+        campo.style.opacity = clave===obj ? '0.45' : '1';
+        const input = clave==='a' ? document.getElementById('acc') :
+                      clave==='t' ? document.getElementById('tiempo') :
+                      document.getElementById(clave);
+        input.disabled = clave===obj;
+        if(clave===obj) input.value='';
+    }
+}
+
+function resolverMRUA(){
+    ocultarError('errorM');
+    try{
+        const objetivo=document.getElementById('objetivoMRUA').value;
+        let v0=valorOpcional('v0');
+        let vf=valorOpcional('vf');
+        let a=valorOpcional('acc');
+        let t=valorOpcional('tiempo');
+        let x0=valorOpcional('x0');
+        let xf=valorOpcional('xf');
+
+        if(t!==null && t<0) throw new Error("El tiempo no puede ser negativo.");
+
+        const dx = (x0!==null && xf!==null) ? xf-x0 : null;
+        let r=null, formula='', sustitucion='', explicacion='';
+
+        if(objetivo==='vf'){
+            if(v0!==null && a!==null && t!==null){
+                r=v0+a*t;
+                formula='vf = v₀ + at';
+                sustitucion=`vf = ${fmt(v0)} + (${fmt(a)})(${fmt(t)})`;
+                explicacion='Se utilizó la ecuación velocidad-tiempo.';
+                vf=r;
+            } else if(v0!==null && a!==null && dx!==null){
+                const q=v0*v0+2*a*dx;
+                if(q<0) throw new Error("Los datos producen una raíz negativa; revisa las unidades o valores.");
+                r=Math.sqrt(q);
+                formula='vf² = v₀² + 2a(x - x₀)';
+                sustitucion=`vf = √[(${fmt(v0)})² + 2(${fmt(a)})(${fmt(dx)})]`;
+                explicacion='Se tomó la raíz positiva de la rapidez final.';
+                vf=r;
+            }
+        }
+
+        if(objetivo==='v0'){
+            if(vf!==null && a!==null && t!==null){
+                r=vf-a*t;
+                formula='v₀ = vf - at';
+                sustitucion=`v₀ = ${fmt(vf)} - (${fmt(a)})(${fmt(t)})`;
+                v0=r;
+            } else if(x0!==null && xf!==null && a!==null && t!==null && t!==0){
+                r=(xf-x0-0.5*a*t*t)/t;
+                formula='v₀ = (x - x₀ - ½at²)/t';
+                sustitucion=`v₀ = [${fmt(xf)} - ${fmt(x0)} - ½(${fmt(a)})(${fmt(t)})²] / ${fmt(t)}`;
+                v0=r;
+            }
+        }
+
+        if(objetivo==='a'){
+            if(v0!==null && vf!==null && t!==null && t!==0){
+                r=(vf-v0)/t;
+                formula='a = (vf - v₀)/t';
+                sustitucion=`a = (${fmt(vf)} - ${fmt(v0)})/${fmt(t)}`;
+                a=r;
+            } else if(x0!==null && xf!==null && v0!==null && t!==null && t!==0){
+                r=2*(xf-x0-v0*t)/(t*t);
+                formula='a = 2(x - x₀ - v₀t)/t²';
+                sustitucion=`a = 2[${fmt(xf)} - ${fmt(x0)} - (${fmt(v0)})(${fmt(t)})]/(${fmt(t)})²`;
+                a=r;
+            } else if(v0!==null && vf!==null && dx!==null && dx!==0){
+                r=(vf*vf-v0*v0)/(2*dx);
+                formula='a = (vf² - v₀²) / [2(x - x₀)]';
+                sustitucion=`a = [(${fmt(vf)})² - (${fmt(v0)})²] / [2(${fmt(dx)})]`;
+                a=r;
+            }
+        }
+
+        if(objetivo==='t'){
+            if(v0!==null && vf!==null && a!==null && a!==0){
+                r=(vf-v0)/a;
+                formula='t = (vf - v₀)/a';
+                sustitucion=`t = (${fmt(vf)} - ${fmt(v0)})/${fmt(a)}`;
+                t=r;
+            } else if(dx!==null && v0!==null && vf!==null && (v0+vf)!==0){
+                r=2*dx/(v0+vf);
+                formula='t = 2(x - x₀)/(v₀ + vf)';
+                sustitucion=`t = 2(${fmt(dx)}) / (${fmt(v0)} + ${fmt(vf)})`;
+                t=r;
+            } else if(dx!==null && v0!==null && a!==null && a!==0){
+                const disc=v0*v0+2*a*dx;
+                if(disc<0) throw new Error("No existe un tiempo real para esos datos.");
+                const t1=(-v0+Math.sqrt(disc))/a;
+                const t2=(-v0-Math.sqrt(disc))/a;
+                const positivos=[t1,t2].filter(z=>z>=0);
+                if(!positivos.length) throw new Error("No se obtiene un tiempo físico no negativo.");
+                r=Math.min(...positivos);
+                formula='x = x₀ + v₀t + ½at²';
+                sustitucion=`Se resuelve: ½(${fmt(a)})t² + (${fmt(v0)})t - (${fmt(dx)}) = 0`;
+                explicacion=`Soluciones matemáticas: t₁=${fmt(t1)} s, t₂=${fmt(t2)} s. Se toma el tiempo físico no negativo.`;
+                t=r;
+            }
+        }
+
+        if(objetivo==='xf'){
+            if(x0!==null && v0!==null && a!==null && t!==null){
+                r=x0+v0*t+0.5*a*t*t;
+                formula='x = x₀ + v₀t + ½at²';
+                sustitucion=`x = ${fmt(x0)} + (${fmt(v0)})(${fmt(t)}) + ½(${fmt(a)})(${fmt(t)})²`;
+                xf=r;
+            } else if(x0!==null && v0!==null && vf!==null && a!==null && a!==0){
+                r=x0+(vf*vf-v0*v0)/(2*a);
+                formula='x = x₀ + (vf² - v₀²)/(2a)';
+                sustitucion=`x = ${fmt(x0)} + [(${fmt(vf)})² - (${fmt(v0)})²]/[2(${fmt(a)})]`;
+                xf=r;
+            }
+        }
+
+        if(objetivo==='x0'){
+            if(xf!==null && v0!==null && a!==null && t!==null){
+                r=xf-v0*t-0.5*a*t*t;
+                formula='x₀ = x - v₀t - ½at²';
+                sustitucion=`x₀ = ${fmt(xf)} - (${fmt(v0)})(${fmt(t)}) - ½(${fmt(a)})(${fmt(t)})²`;
+                x0=r;
+            } else if(xf!==null && v0!==null && vf!==null && a!==null && a!==0){
+                r=xf-(vf*vf-v0*v0)/(2*a);
+                formula='x₀ = x - (vf² - v₀²)/(2a)';
+                sustitucion=`x₀ = ${fmt(xf)} - [(${fmt(vf)})² - (${fmt(v0)})²]/[2(${fmt(a)})]`;
+                x0=r;
+            }
+        }
+
+        if(r===null || !Number.isFinite(r)){
+            throw new Error("Con los datos capturados no hay información suficiente para calcular esa variable. Captura otro dato conocido.");
+        }
+        if(objetivo==='t' && r<0) throw new Error("El cálculo produce un tiempo negativo; revisa los datos.");
+
+        const nombres={vf:'vf',v0:'v₀',a:'a',t:'t',xf:'x',x0:'x₀'};
+        const unidades={vf:'m/s',v0:'m/s',a:'m/s²',t:'s',xf:'m',x0:'m'};
+
+        document.getElementById('resultadoM').innerHTML =
+            `${nombres[objetivo]} = ${fmt(r)} ${unidades[objetivo]}`;
+
+        const datos=[];
+        if(v0!==null && objetivo!=='v0') datos.push(`v₀ = ${fmt(v0)} m/s`);
+        if(vf!==null && objetivo!=='vf') datos.push(`vf = ${fmt(vf)} m/s`);
+        if(a!==null && objetivo!=='a') datos.push(`a = ${fmt(a)} m/s²`);
+        if(t!==null && objetivo!=='t') datos.push(`t = ${fmt(t)} s`);
+        if(x0!==null && objetivo!=='x0') datos.push(`x₀ = ${fmt(x0)} m`);
+        if(xf!==null && objetivo!=='xf') datos.push(`x = ${fmt(xf)} m`);
+
+        document.getElementById('procM').textContent =
+`VARIABLE A CALCULAR:
+   ${nombres[objetivo]}
+
+DATOS UTILIZADOS:
+   ${datos.join('\n   ')}
+
+1) Seleccionamos una ecuación de MRUA que contenga la incógnita
+   y los datos conocidos:
+
+   ${formula}
+
+2) Sustituimos los valores:
+
+   ${sustitucion}
+
+3) Realizamos las operaciones:
+
+   ${nombres[objetivo]} = ${fmt(r)} ${unidades[objetivo]}
+
+${explicacion ? '4) Observación:\n   '+explicacion : ''}`;
+
+        if(x0!==null && v0!==null && a!==null && t!==null && t>=0){
+            dibujarMRUA(v0,a,t,x0);
+        } else {
+            const c=document.getElementById('canvasM');
+            c.getContext('2d').clearRect(0,0,c.width,c.height);
+        }
+    }catch(e){ mostrarError('errorM',e.message); }
+}
+
+function dibujarMRUA(v0,a,t,x0){
+    const c=document.getElementById('canvasM'), ctx=c.getContext('2d');
+    const W=c.width,H=c.height;
+    ctx.clearRect(0,0,W,H);
+
+    let pts=[];
+    const pasos=150;
+    const tGraf=Math.max(t,0.001);
+    for(let i=0;i<=pasos;i++){
+        const tt=tGraf*i/pasos;
+        const x=x0+v0*tt+0.5*a*tt*tt;
+        pts.push([tt,x]);
+    }
+    let xs=pts.map(p=>p[1]);
+    let xmin=Math.min(...xs), xmax=Math.max(...xs);
+    if(xmax-xmin<1){ xmin-=1; xmax+=1; }
+    const margen=(xmax-xmin)*0.1;
+    xmin-=margen; xmax+=margen;
+
+    const pad=55;
+    function X(tt){ return pad+(tt/tGraf)*(W-2*pad); }
+    function Y(x){ return H-pad-(x-xmin)/(xmax-xmin)*(H-2*pad); }
+
+    ctx.strokeStyle='#bbb'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.stroke();
+
+    ctx.strokeStyle='#111'; ctx.lineWidth=2.5;
+    ctx.beginPath();
+    pts.forEach((p,i)=>{const px=X(p[0]),py=Y(p[1]); if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});
+    ctx.stroke();
+
+    ctx.fillStyle='#111'; ctx.font='12px Arial';
+    ctx.fillText('t (s)',W-pad+8,H-pad+4);
+    ctx.fillText('x (m)',pad-35,pad-10);
+}
+
+function ejemploMRUA(){
+    document.getElementById('objetivoMRUA').value='vf';
+    actualizarObjetivoMRUA();
+    document.getElementById('v0').value='5';
+    document.getElementById('acc').value='2';
+    document.getElementById('tiempo').value='6';
+    document.getElementById('x0').value='0';
+    document.getElementById('xf').value='';
+    document.getElementById('resultadoM').textContent='Ejemplo cargado: calcula la velocidad final.';
+    document.getElementById('procM').textContent='';
+    ocultarError('errorM');
+}
+
+function limpiarMRUA(){
+    ['v0','vf','acc','tiempo','x0','xf'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('resultadoM').textContent='Aquí aparecerá el resultado.';
+    document.getElementById('procM').textContent='';
+    const c=document.getElementById('canvasM');
+    c.getContext('2d').clearRect(0,0,c.width,c.height);
+    ocultarError('errorM');
+    actualizarObjetivoMRUA();
+}
+
+actualizarObjetivoMRUA();
+
+</script>
+</body>
+</html>
